@@ -10,3 +10,7 @@ COORD calculateCenter(int consoleWidth, int consoleHeight, int bufferWidth, int 
     center.Y = (consoleHeight - bufferHeight) / 2;
     return center;
 }
+
+float clamp(float val) {
+    return min(max(-1.0, val),1.0);
+}

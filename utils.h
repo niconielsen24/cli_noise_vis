@@ -7,4 +7,6 @@ double map(double value, double fromMin, double fromMax, double toMin, double to
 
 COORD calculateCenter(int consoleWidth, int consoleHeight, int bufferWidth, int bufferHeight);
 
+float clamp(float val);
+
 #endif
