@@ -1,4 +1,3 @@
-#include <windows.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -6,85 +5,79 @@
 #include <time.h>
 #include <string.h>
 
-#include "console_utils.h"
+#include "rogueutil.h" // copied from "https://github.com/sakhmatd/rogueutil"
 #include "open-simplex-noise.h" // copied from "https://github.com/smcameron/open-simplex-noise-in-c"
 #include "utils.h"
 
 int main(int argc, char *argv[]) {
 
-    int noise_ctx_seed = 12345;
-    float size_factor = 0.7;
+    int noise_ctx_seed = 0;
+    float size_factor  = 0;
     if (argc == 3)
     {
         noise_ctx_seed = strtol(argv[1], NULL, 10);
-        size_factor = strtof(argv[2],NULL);
+        size_factor    = strtof(argv[2],NULL);
+    } else {
+        noise_ctx_seed = 12345;
+        size_factor    = 0.7;
     }
-
-    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (hConsole == INVALID_HANDLE_VALUE) {
-        fprintf(stderr, "Error while creating console handle\n");
-        return EXIT_FAILURE;
-    }
-
-    CONSOLE_SCREEN_BUFFER_INFO console_screen_buffer_info;
-    if (!GetConsoleScreenBufferInfo(hConsole,&console_screen_buffer_info)){
-        fprintf(stderr, "Failed to get console screen buffer information\n");
-        return EXIT_FAILURE;
-    }
-
-    int height = console_screen_buffer_info.dwSize.Y * size_factor;
-    int depth = 1000;
-    int width = console_screen_buffer_info.dwSize.X * size_factor; 
-    char * density = "@$B86G4HTU#?l!*;:+<>=^~-,.`        ";
-
-    CHAR_INFO (*info_buffer)[height * width] = malloc(sizeof(CHAR_INFO[depth][height * width]));
-    if (info_buffer == NULL) {
-        fprintf(stderr, "Failed to allocate buffer");
-        return EXIT_FAILURE;
-    }
-
-    struct osn_context *ctx;
-    open_simplex_noise(noise_ctx_seed ,&ctx);
 
     double noise_val;
+    bool should_continue = true;
+    char * density = "@$B86G4HTU#?l!*;:+<>=^~-,.`        ";
+
+    int height  = (int)(trows() * size_factor);
+    int depth   = 500;
+    int width   = (int)(tcols() * size_factor); 
+
+    int center_y = (trows() - height) / 2; 
+    int center_x = (tcols() - width)  / 2; 
+
+    char grid[depth][height * (width + center_x)];
+
+    struct osn_context *ctx;
+    open_simplex_noise(noise_ctx_seed, &ctx);
 
     for (int i = 0; i < depth; i++)
     {
         for (int j = 0; j < height; j++)
         {
-            for (int z = 0; z < width; z++)
+            for (int z = 0; z < (width + center_x); z++)
             {
                 noise_val = open_simplex_noise3(ctx,(double) (i+0.0001)/100,(double) (j+0.0001)/100,(double) (z+0.0001)/100);
-                info_buffer[i][(j * width) + z].Char.AsciiChar = density[(int)map(noise_val,-1.0,1.0,0.0,(double) strlen(density))];
-                info_buffer[i][(j * width) + z].Attributes = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
+                if (z < center_x)   grid[i][j * (width + center_x) + z] = ' ';
+                if (z >= center_x)  grid[i][j * (width + center_x) + z] = density[(int)map(noise_val,-1.0,1.0,0.0,(double) strlen(density))];;
+                if (z == center_x || z == center_x + width - 2) grid[i][j * (width + center_x) + z] = '|';
+                if (j == 0 && z >= center_x)                    grid[i][j * (width + center_x) + z] = '-';
+                if (j == height - 1 && z >= center_x)           grid[i][j * (width + center_x) + z] = '-';
+                if (
+                    (j == height - 1 && z == center_x)              ||
+                    (j == height - 1 && z == width + center_x - 2)  ||
+                    (j == 0 && z == center_x)                       ||
+                    (j == 0 && z == width + center_x - 2)
+                    )                                           grid[i][j * (width + center_x) + z] = '+';
             }
+            grid[i][(j == 0) ? width + center_x - 1 : (j * (width + center_x)) - 1] = '\n';
         }
+        grid[i][(height * (width + center_x)) - 1] = '\0';
     }
 
-    COORD bufferSize = { width, height };
-    COORD bufferCoord = { 0, 0 };
-    COORD center = calculateCenter(console_screen_buffer_info.dwSize.X, console_screen_buffer_info.dwSize.Y, width, height);
-    SMALL_RECT writeRegion = { center.X, center.Y, center.X + width - 1, center.Y + height - 1 };
-    setCursorInvis(hConsole);
-
-    bool should_continue = 1;
     while (should_continue){
         for (int i = 0; i < depth; i++)
         {
-            clearConsole();
-            box(hConsole,center.X-1,center.Y-1,width+2,height+2);
-            WriteConsoleOutput(hConsole, info_buffer[i], bufferSize, bufferCoord, &writeRegion);
+            cls();
+            for (int k = 0; k < center_y; k++) printf("%c",'\n');
+            printf("%s",grid[i]);
             if (GetAsyncKeyState(VK_ESCAPE) & 0x8000) {
-            should_continue = false;
-            break;
+                should_continue = false;
+                break;
             }
             Sleep(30);
         }
     }
 
-    clearConsole();
+    cls();
     open_simplex_noise_free(ctx);
-    free(info_buffer);
 
     return EXIT_SUCCESS;
 }

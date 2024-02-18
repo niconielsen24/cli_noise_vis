@@ -1,3 +1,4 @@
 *.o
 *.exe
+open-simplex-noise.c
 .vscode
