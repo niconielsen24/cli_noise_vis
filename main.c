@@ -1,18 +1,16 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <stdbool.h>
-#include <time.h>
-#include <string.h>
 
-#include "rogueutil.h" // copied from "https://github.com/sakhmatd/rogueutil"
-#include "open-simplex-noise.h" // copied from "https://github.com/smcameron/open-simplex-noise-in-c"
+#include "rogueutil.h"          // cloned from "https://github.com/sakhmatd/rogueutil"
+#include "open-simplex-noise.h" // cloned from "https://github.com/smcameron/open-simplex-noise-in-c"
 #include "utils.h"
 
 int main(int argc, char *argv[]) {
 
     int noise_ctx_seed = 0;
     float size_factor  = 0;
+    
     if (argc == 3)
     {
         noise_ctx_seed = strtol(argv[1], NULL, 10);
@@ -25,59 +23,52 @@ int main(int argc, char *argv[]) {
     double noise_val;
     bool should_continue = true;
     char * density = "@$B86G4HTU#?l!*;:+<>=^~-,.`        ";
-
-    int height  = (int)(trows() * size_factor);
-    int depth   = 500;
-    int width   = (int)(tcols() * size_factor); 
-
-    int center_y = (trows() - height) / 2; 
-    int center_x = (tcols() - width)  / 2; 
-
-    char grid[depth][height * (width + center_x)];
-
+    BoxDim box = {500, (int)(trows() * size_factor), (int)(tcols() * size_factor)};
+    int center_y = (trows() - box.height) / 2; 
+    int center_x = (tcols() - box.width)  / 2; 
+    char grid[box.depth][box.height * (box.width + center_x)];
     struct osn_context *ctx;
     open_simplex_noise(noise_ctx_seed, &ctx);
 
-    for (int i = 0; i < depth; i++)
+    for (int i = 0; i < box.depth; i++)
     {
-        for (int j = 0; j < height; j++)
+        for (int j = 0; j < box.height; j++)
         {
-            for (int z = 0; z < (width + center_x); z++)
+            for (int z = 0; z < (box.width + center_x); z++)
             {
                 noise_val = open_simplex_noise3(ctx,(double) (i+0.0001)/100,(double) (j+0.0001)/100,(double) (z+0.0001)/100);
-                if (z < center_x)   grid[i][j * (width + center_x) + z] = ' ';
-                if (z >= center_x)  grid[i][j * (width + center_x) + z] = density[(int)map(noise_val,-1.0,1.0,0.0,(double) strlen(density))];;
-                if (z == center_x || z == center_x + width - 2) grid[i][j * (width + center_x) + z] = '|';
-                if (j == 0 && z >= center_x)                    grid[i][j * (width + center_x) + z] = '-';
-                if (j == height - 1 && z >= center_x)           grid[i][j * (width + center_x) + z] = '-';
+                if (z < center_x)   grid[i][j * (box.width + center_x) + z] = ' ';
+                if (z >= center_x)  grid[i][j * (box.width + center_x) + z] = density[(int)map(noise_val,-1.0,1.0,0.0,(double) strlen(density))];;
+                if (z == center_x || z == center_x + box.width - 2) grid[i][j * (box.width + center_x) + z] = '|';
+                if (j == 0 && z >= center_x)                        grid[i][j * (box.width + center_x) + z] = '-';
+                if (j == box.height - 1 && z >= center_x)           grid[i][j * (box.width + center_x) + z] = '-';
                 if (
-                    (j == height - 1 && z == center_x)              ||
-                    (j == height - 1 && z == width + center_x - 2)  ||
-                    (j == 0 && z == center_x)                       ||
-                    (j == 0 && z == width + center_x - 2)
-                    )                                           grid[i][j * (width + center_x) + z] = '+';
+                    (j == box.height - 1 && z == center_x)                  ||
+                    (j == box.height - 1 && z == box.width + center_x - 2)  ||
+                    (j == 0 && z == center_x)                               ||
+                    (j == 0 && z == box.width + center_x - 2)
+                    )                                           grid[i][j * (box.width + center_x) + z] = '+';
             }
-            grid[i][(j == 0) ? width + center_x - 1 : (j * (width + center_x)) - 1] = '\n';
+            grid[i][(j == 0) ? box.width + center_x - 1 : (j * (box.width + center_x)) - 1] = '\n';
         }
-        grid[i][(height * (width + center_x)) - 1] = '\0';
+        grid[i][(box.height * (box.width + center_x)) - 1] = '\0';
     }
 
     while (should_continue){
-        for (int i = 0; i < depth; i++)
+        for (int i = 0; i < box.depth; i++)
         {
             cls();
             for (int k = 0; k < center_y; k++) printf("%c",'\n');
             printf("%s",grid[i]);
-            if (GetAsyncKeyState(VK_ESCAPE) & 0x8000) {
+            if (get_key_state()) {
                 should_continue = false;
                 break;
             }
-            Sleep(30);
+            msleep(20);
         }
     }
 
     cls();
     open_simplex_noise_free(ctx);
-
     return EXIT_SUCCESS;
 }
