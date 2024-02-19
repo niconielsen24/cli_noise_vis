@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <errno.h>
+#include <limits.h>
 
 #include "rogueutil.h"          // cloned from "https://github.com/sakhmatd/rogueutil"
 #include "open-simplex-noise.h" // cloned from "https://github.com/smcameron/open-simplex-noise-in-c"
@@ -10,12 +12,53 @@ int main(int argc, char *argv[]) {
 
     int noise_ctx_seed = 0;
     float size_factor  = 0;
+    setCursorVisibility(0);
     
     if (argc == 3)
     {
-        noise_ctx_seed = strtol(argv[1], NULL, 10);
-        size_factor    = strtof(argv[2],NULL);
+        const char * nptr = argv[1];
+        char * endptr = NULL;
+        errno = 0;
+        noise_ctx_seed = strtol(nptr, &endptr, 10);
+        if (nptr == endptr) {
+            fprintf(stderr, " Seed : %i  invalid  (no digits found, 0 returned)\n", noise_ctx_seed);
+            return EXIT_FAILURE;
+        } else if (errno == ERANGE && noise_ctx_seed == INT_MIN) {
+            fprintf(stderr, " Seed : %i  invalid  (underflow occurred)\n", noise_ctx_seed);
+            return EXIT_FAILURE;
+        } else if (errno == ERANGE && noise_ctx_seed == INT_MAX) {
+            fprintf(stderr, " Seed : %i  invalid  (overflow occurred)\n", noise_ctx_seed);
+            return EXIT_FAILURE;
+        } else if (errno != 0 && noise_ctx_seed == 0) {
+            fprintf(stderr, " Seed : %i  invalid  (unspecified error occurred)\n", noise_ctx_seed);        
+            return EXIT_FAILURE;
+        }
+
+        const char * nptr_1 = argv[2];
+        char * endptr_1 = NULL;
+        errno = 0;
+        size_factor = strtof(nptr_1, &endptr_1);
+        if (nptr_1 == endptr_1) {
+            fprintf(stderr,  " Size factor : %f  invalid  (no digits found, 0 returned)\n", size_factor);
+            return EXIT_FAILURE;
+        } else if (errno == ERANGE) {
+            fprintf(stderr, " Size factor : %f  invalid  (overflow/underflow occurred)\n", size_factor);
+            return EXIT_FAILURE;
+        }
     } else {
+        char *usage =  
+        "\n\nUsage :"
+        "\n\n   *Example run : 'noise.exe <int noise seed> <float size_factor>'"
+        "\n    If no parameters are provided defaults will be used"
+        "\n\n   *Default values :"
+        "\n         Noise seed = 12345"
+        "\n         Size facor = 0.7 (eg. 0.7 times width and height of the console size)"
+        "\n\n   *In general a size factor of 0.7 is the max the stack can handle"
+        "\n   *Escape key will exit the program"
+        "\n\n       <<< Press any key to continue >>>";
+        cls();
+        printf("%s",usage);
+        getkey();
         noise_ctx_seed = 12345;
         size_factor    = 0.7;
     }
