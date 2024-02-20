@@ -21,6 +21,6 @@ double map(double value, double fromMin, double fromMax, double toMin, double to
 }
 
 float clamp(float val) {
-    return min(max(-1.0, val),1.0);
+    return min(max(0.0, val),1.0);
 }
 
