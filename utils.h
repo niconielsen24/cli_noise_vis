@@ -6,10 +6,15 @@
     bool get_key_state(){
         return GetAsyncKeyState(VK_ESCAPE) & 0x8000;
     }
+
+    int check_console_window_resize_event(void);
+
 #endif
 #ifdef __linux__
 #include <ncurses.h>
     bool get_key_state();
+
+    int check_console_window_resize_event(void);
 #endif
 
 typedef struct {

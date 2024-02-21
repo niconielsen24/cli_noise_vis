@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
                     (j == box.height - 1 && z == box.width + center_x - 2)  ||                                          //
                     (j == 0 && z == center_x)                               ||                                          // using '+' character as a corner bound
                     (j == 0 && z == box.width + center_x - 2)                                                           //
-                    )                                           grid[i][j * (box.width + center_x) + z] = '+';          //
+                    ) grid[i][j * (box.width + center_x) + z] = '+';
             }
             grid[i][(j == 0) ? box.width + center_x - 1 : (j * (box.width + center_x)) - 1] = '\n';
         }
@@ -111,6 +111,42 @@ int main(int argc, char *argv[]) {
             if (get_key_state()) {       // do not really know if get_key_state() works in linux systems 
                 should_continue = false; // while loop condition
                 break;                   // break out of current for loop;
+            }
+            if (check_console_window_resize_event())
+            {
+                box.depth = 1024;
+                box.height = (int)(trows() * size_factor);
+                box.width = (int)(tcols() * size_factor);
+                center_y = (trows() - box.height) / 2; 
+                center_x = 1 + (tcols() - box.width)  / 2; 
+                grid = realloc(grid,box.depth * sizeof(char*));
+                for (int i = 0; i < box.depth; i++)
+                {
+                    grid[i] = malloc(box.height * (box.width + center_x) * sizeof(char));
+                }
+                
+                for (int i = 0; i < box.depth; i++)
+                {
+                    for (int j = 0; j < box.height; j++)
+                    {
+                        for (int z = 0; z < (box.width + center_x); z++)
+                        {
+                            noise_val = open_simplex_noise3(ctx,(double) (i+0.0001)/100,(double) (j+0.0001)/100,(double) (z+0.0001)/100);
+                            if (z < center_x)   grid[i][j * (box.width + center_x) + z] = ' ';
+                            if (z >= center_x)  grid[i][j * (box.width + center_x) + z] = density[(int)map(noise_val,-1.0,1.0,0.0,(double) strlen(density))];;
+                            if (z == center_x || z == center_x + box.width - 2)     grid[i][j * (box.width + center_x) + z] = '|';  // using '|' character as a left/right bound 
+                            if ((j == 0 || (j == box.height - 1)) && z >= center_x) grid[i][j * (box.width + center_x) + z] = '-';  // using '-' character as a up/down bound
+                            if (
+                                (j == box.height - 1 && z == center_x)                  ||                                          //
+                                (j == box.height - 1 && z == box.width + center_x - 2)  ||                                          //
+                                (j == 0 && z == center_x)                               ||                                          // using '+' character as a corner bound
+                                (j == 0 && z == box.width + center_x - 2)                                                           //
+                                ) grid[i][j * (box.width + center_x) + z] = '+';
+                        }
+                         grid[i][(j == 0) ? box.width + center_x - 1 : (j * (box.width + center_x)) - 1] = '\n';
+                    }
+                    grid[i][(box.height * (box.width + center_x)) - 1] = '\0';
+                }
             }
             msleep(20);
         }
