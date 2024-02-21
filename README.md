@@ -4,7 +4,7 @@
 As of now the linux specific function implementations have not been tested, so i do not know for certain if they work correctly.
 
 # USAGE
-noise.exe (int)noise seed (float)size_factor
+noise.exe (int)noise_seed (float)size_factor
 
 if no parameters, or only one parameter is provided then default parameters will be used 
 
