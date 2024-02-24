@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra
+CFLAGS = -Wall -Wextra -lncurses
 SRCS = $(wildcard *.c)
 OBJS = $(patsubst %.c,%.o,$(SRCS))
 EXEC = noise
@@ -13,7 +13,7 @@ $(EXEC): $(OBJS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	erase -f $(OBJS) $(EXEC).exe
+	rm $(OBJS) $(EXEC)
 
 run : $(EXEC)
-	./$(EXEC).exe
+	./$(EXEC)

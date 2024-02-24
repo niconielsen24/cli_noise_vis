@@ -1,7 +1,8 @@
-#include <windows.h>
+#include <stdlib.h>
+#include <math.h>
 
 #ifdef _WIN32
-
+#include <windows.h>
     /**
     *check_console_window_resize_event()
     *
@@ -64,9 +65,8 @@
 #ifdef __linux__
 #include <stdbool.h>
 #include <sys/ioctl.h>
+#include <ncurses.h>
 #include <unistd.h>
-
-// these functions arent tested and i do not really know if they work correctly
 
 bool get_key_state() {
     initscr();
@@ -100,6 +100,6 @@ double map(double value, double fromMin, double fromMax, double toMin, double to
 }
 
 float clamp(float val) {
-    return min(max(0.0, val),1.0);
+    return fmin(fmax(0.0, val),1.0);
 }
 

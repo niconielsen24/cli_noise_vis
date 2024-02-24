@@ -1,8 +1,5 @@
 # Simple noise visualization using ascii characters in console
 
-# IMPORTANT NOTE 
-As of now the linux specific function implementations have not been tested, so i do not know for certain if they work correctly.
-
 # USAGE
 noise.exe (int)noise_seed (float)size_factor
 
